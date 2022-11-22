@@ -7,11 +7,16 @@ import (
 )
 
 const (
-	ipFieldExp  = "exp"
-	ipFieldNum  = "num"
-	ipLimitBase = 8
-	ipExpire    = time.Minute * 10
-	ipTmpFile   = "/tmp/ip.anti"
+	ipFieldExp   = "exp"
+	ipFieldNum   = "num"
+	ipPathExpire = time.Minute
+	ipFilterTime = time.Minute
+	ipTmpFile    = "/tmp/ip.anti"
+)
+
+var (
+	ipLimitBase = int64(6)
+	ipLimitPath = int64(3)
 )
 
 // 统计ip的行为数据分析
@@ -56,21 +61,30 @@ func (s *ipSt) Parse(line string) {
 	}
 	hKey := "path@" + aStr[0]
 	cmd := cRedis.HIncrBy(hKey, aStr[1], 1)
+	cRedis.Expire(hKey, ipPathExpire) //监测统计时效
 	if cmd == nil || cmd.Val() < ipLimitBase {
 		return
 	}
-	//分析请求的地址情况信息
+	//分析请求的地址情况信息 并非单独访问单一API请求
+	cmd = cRedis.HLen(hKey)
+	if cmd == nil || cmd.Val() > ipLimitPath {
+		return
+	}
+	s.setFilter(aStr[0], -1)
 }
 
 // 设置ip屏蔽的逻辑
-func (s *ipSt) SetFilter(ip string, expire int64) {
-	cRedis.SAdd(ipFilter, ip)
+func (s *ipSt) setFilter(ip string, expire int64) {
 	cKey, num := "ip@"+ip, 1
-	if expire < 1 {
-		numStr := cRedis.HGet(cKey, ipFieldNum).Val()
-		num, _ = strconv.Atoi(numStr)
-		num += 1
-		expire = time.Now().Unix() + int64(num)*int64(ipExpire)
+	numStr := cRedis.HGet(cKey, ipFieldNum).Val()
+	num, _ = strconv.Atoi(numStr)
+	if num < 3 { //说明已经连续3次促发告警的情况
+		return
 	}
-	cRedis.MSet(ipFieldExp, expire, ipFieldNum, num)
+	cRedis.SAdd(ipFilter, ip)
+	if expire < 1 {
+		num += 1
+		expire = time.Now().Unix() + int64(num)*int64(ipFilterTime)
+	}
+	cRedis.HMSet(cKey, map[string]interface{}{ipFieldExp: expire, ipFieldNum: num})
 }

@@ -7,7 +7,8 @@ import (
 // 请求提交一个url地址数据资料信息
 func Router(app *gin.Engine) {
 	app.GET("_/s.js", antiJs)
-	app.GET("_/icon.jpg", antiImage)
+	app.GET("_/ic.jpg", antiImage)
 	app.GET("anti/ping", antiPing)
-	app.GET("anti/report", antiReport)
+	app.GET("anti/rp", antiReport)
+	app.GET("anti/ca", antiCaptcha)
 }
