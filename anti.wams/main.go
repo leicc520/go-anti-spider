@@ -54,9 +54,7 @@ func antiToken(_ js.Value, _ []js.Value) any {
 		}
 	}()
 	agent := gWindow.Get("navigator").Get("userAgent").String()
-	screen := gWindow.Get("screen")
-	winScaleStr := fmt.Sprintf("%dx%d", screen.Get("width").Int(), screen.Get("height").Int())
-	tokenStr := _token(false, agent+winScaleStr)
+	tokenStr := _token(false, agent)
 	writeLog("T:", tokenStr)
 	gmtStr := time.Now().Format("Mon, 02 Jan 2006 15:04:05 GMT")
 	doc := gWindow.Get("document")

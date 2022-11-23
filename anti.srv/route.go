@@ -20,7 +20,6 @@ func Router(app *gin.Engine) {
 	staticDir := filepath.Join(dir, "static")
 	app.Static("/static", staticDir)
 	app.GET("_/s.js", antiJs)
-	app.GET("_/ic.jpg", antiImage)
 	app.GET("anti/ping", antiPing)
 	app.GET("anti/rp", antiReport)
 	app.GET("anti/ca", antiCaptcha)
