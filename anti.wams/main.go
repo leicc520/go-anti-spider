@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	hashLen = 6
 	VERSION = "v1.0.1"
 )
 
@@ -32,12 +33,12 @@ func _token(ox bool, data string) string {
 	timeStr := strconv.FormatInt(time.Now().Unix(), 10)
 	hashStr := fmt.Sprintf("%x", md5.Sum([]byte(data+timeStr+GPKey)))
 	writeLog("D:", data+timeStr+GPKey)
-	preHash, aftHash, preIdx, aftIdx := make([]byte, 4), make([]byte, 4), 0, len(hashStr)-16
+	preHash, aftHash, preIdx, aftIdx := make([]byte, hashLen), make([]byte, hashLen), 0, len(hashStr)-16
 	if ox == false { //取计算
 		preIdx += 1
 		aftIdx += 1
 	}
-	for i := 0; i < 4; i++ { //截取指定的字符
+	for i := 0; i < hashLen; i++ { //截取指定的字符
 		preHash[i] = []byte(hashStr)[preIdx+i*2]
 		aftHash[i] = []byte(hashStr)[aftIdx+i*2]
 	}
@@ -59,8 +60,8 @@ func antiToken(_ js.Value, _ []js.Value) any {
 	writeLog("T:", tokenStr)
 	gmtStr := time.Now().Format("Mon, 02 Jan 2006 15:04:05 GMT")
 	doc := gWindow.Get("document")
-	doc.Set("cookie", js.ValueOf(`_at=`+tokenStr+`;expires=`+gmtStr+`;path=/;`))
-	gWindow.Set("_tk", js.ValueOf(tokenStr)) //token注入全局当中
+	doc.Set("cookie", js.ValueOf(`_ak=`+tokenStr+`;expires=`+gmtStr+`;path=/;`))
+	gWindow.Set("_ak", js.ValueOf(tokenStr)) //token注入全局当中
 	writeLog("J:", `_at=`+tokenStr+`;expires=`+gmtStr+`;path=/;`)
 	return nil
 }
@@ -82,13 +83,13 @@ func antiCrypt(_ js.Value, args []js.Value) any {
 // 解析器主函数
 func main() {
 	gWindow = js.Global()
-	var xrWasm = gWindow.Call("eval", `({v: "v1.0.0"})`)
-	xrWasm.Set("v", VERSION)
-	xrWasm.Set("a", js.FuncOf(antiToken))
-	xrWasm.Set("e", js.FuncOf(antiCrypt))
-	gWindow.Set("MeWasm", xrWasm)
+	var wasm = gWindow.Call("eval", `({v: "v1.0.0"})`)
+	wasm.Set("v", VERSION)
+	wasm.Set("a", js.FuncOf(antiToken))
+	wasm.Set("e", js.FuncOf(antiCrypt))
+	gWindow.Set("wasm", wasm)
 	//自动更新token的处理逻辑 30秒刷新token逻辑
-	jsAutoReSet := `window.setInterval(function(){window.MeWasm.a();}, 30000)`
+	jsAutoReSet := `window.setInterval(function(){window.wasm.a();}, 6000)`
 	gWindow.Call("eval", jsAutoReSet)
 	select {}
 }

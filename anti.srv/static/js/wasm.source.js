@@ -140,18 +140,18 @@
 			const mem = () => {
 				// The buffer may change when requesting more memory.
 				return new DataView(this._inst.exports.memory.buffer);
-			}
+			};
 
 			const setInt64 = (addr, v) => {
 				mem().setUint32(addr + 0, v, true);
 				mem().setUint32(addr + 4, Math.floor(v / 4294967296), true);
-			}
+			};
 
 			const getInt64 = (addr) => {
 				const low = mem().getUint32(addr + 0, true);
 				const high = mem().getInt32(addr + 4, true);
 				return low + high * 4294967296;
-			}
+			};
 
 			const loadValue = (addr) => {
 				const f = mem().getFloat64(addr, true);
@@ -164,7 +164,7 @@
 
 				const id = mem().getUint32(addr, true);
 				return this._values[id];
-			}
+			};
 
 			const storeValue = (addr, v) => {
 				const nanHead = 0x7FF80000;
@@ -227,11 +227,11 @@
 				}
 				mem().setUint32(addr + 4, nanHead | typeFlag, true);
 				mem().setUint32(addr, id, true);
-			}
+			};
 
 			const loadSlice = (array, len, cap) => {
 				return new Uint8Array(this._inst.exports.memory.buffer, array, len);
-			}
+			};
 
 			const loadSliceOfValues = (array, len, cap) => {
 				const a = new Array(len);
@@ -239,11 +239,11 @@
 					a[i] = loadValue(array + i * 8);
 				}
 				return a;
-			}
+			};
 
 			const loadString = (ptr, len) => {
 				return decoder.decode(new DataView(this._inst.exports.memory.buffer, ptr, len));
-			}
+			};
 
 			const timeOrigin = Date.now() - performance.now();
 			this.importObject = {
@@ -454,7 +454,7 @@
 					},
 				}
 			};
-		}
+		};
 
 		async run(instance) {
 			this._inst = instance;
@@ -472,7 +472,7 @@
 			this._idPool = [];      // unused ids that have been garbage collected
 			this.exited = false;    // whether the Go program has exited
 
-			const mem = new DataView(this._inst.exports.memory.buffer)
+			const mem = new DataView(this._inst.exports.memory.buffer);
 
 			while (true) {
 				const callbackPromise = new Promise((resolve) => {
@@ -489,7 +489,7 @@
 				}
 				await callbackPromise;
 			}
-		}
+		};
 
 		_resume() {
 			if (this.exited) {
@@ -499,7 +499,7 @@
 			if (this.exited) {
 				this._resolveExitPromise();
 			}
-		}
+		};
 
 		_makeFuncWrapper(id) {
 			const go = this;
@@ -508,9 +508,9 @@
 				go._pendingEvent = event;
 				go._resume();
 				return event.result;
-			};
-		}
-	}
+			}
+		};
+	};
 
 	if (
 		global.require &&
