@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	GPKey   = "x.x.x.x"
+	GPKey   = "597.846.513.246"
 	gWindow = js.ValueOf(nil)
 	gDebug  = false
 )
@@ -25,23 +25,6 @@ func writeLog(args ...interface{}) {
 	if gDebug {
 		fmt.Println(args...)
 	}
-}
-
-// 设置打开调试模式
-func antiDebug(_ js.Value, args []js.Value) any {
-	defer func() {
-		if err := recover(); err != nil {
-			writeLog(err)
-		}
-	}()
-	if len(args) > 0 { //参数大于1的情况
-		if s := args[0].Bool(); s {
-			gDebug = true
-			return nil
-		}
-	}
-	gDebug = false
-	return nil
 }
 
 // 获取token数据资料信息
@@ -77,6 +60,7 @@ func antiToken(_ js.Value, _ []js.Value) any {
 	gmtStr := time.Now().Format("Mon, 02 Jan 2006 15:04:05 GMT")
 	doc := gWindow.Get("document")
 	doc.Set("cookie", js.ValueOf(`_at=`+tokenStr+`;expires=`+gmtStr+`;path=/;`))
+	gWindow.Set("_tk", js.ValueOf(tokenStr)) //token注入全局当中
 	writeLog("J:", `_at=`+tokenStr+`;expires=`+gmtStr+`;path=/;`)
 	return nil
 }
@@ -98,13 +82,13 @@ func antiCrypt(_ js.Value, args []js.Value) any {
 // 解析器主函数
 func main() {
 	gWindow = js.Global()
-	gWindow.Set("_v", VERSION)
-	gWindow.Set("_a", js.FuncOf(antiToken))
-	gWindow.Set("_e", js.FuncOf(antiCrypt))
-	gWindow.Set("_d", js.FuncOf(antiDebug))
+	var xrWasm = gWindow.Call("eval", `({v: "v1.0.0"})`)
+	xrWasm.Set("v", VERSION)
+	xrWasm.Set("a", js.FuncOf(antiToken))
+	xrWasm.Set("e", js.FuncOf(antiCrypt))
+	gWindow.Set("MeWasm", xrWasm)
 	//自动更新token的处理逻辑 30秒刷新token逻辑
-	jsAutoReSet := `window.setInterval(function(){window._a();}, 300000)`
-	jsAutoReSet = `window.setInterval(function(){console.log("1111");}, 3000)`
+	jsAutoReSet := `window.setInterval(function(){window.MeWasm.a();}, 30000)`
 	gWindow.Call("eval", jsAutoReSet)
 	select {}
 }
