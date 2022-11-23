@@ -1,0 +1,1 @@
+# GOARCH=wasm GOOS=js go build -o ./dist/anti.wasm -ldflags="-w -s" .
